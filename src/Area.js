@@ -73,7 +73,16 @@ export default class Area extends Component {
       top = -20 - height;
     }
 
-    return { width, height, left, top, orientation, refLeft: x * areaWidth / 100, refTop: y * areaHeight / 100 };
+    return {
+      width,
+      height,
+      left,
+      top,
+      orientation,
+      refLeft: x * areaWidth / 100,
+      refTop: y * areaHeight / 100,
+      original: { width, height, left, top }
+    };
   }
 
   getContainers = ghosts => {
@@ -144,13 +153,24 @@ export default class Area extends Component {
                         container.top += 1;
                     }
 
+                    if (shouldHide(container)) {
+                        container.width = container.height = MIN_SIDE;
+                        container.left = container.top = -MIN_SIDE * .5;
+                        // c.width = c.original.width;
+                        // c.height = c.original.height;
+                        // c.left = c.original.left;
+                        // c.top = c.original.top;
+                    }
+
                     done = false;
+                } else if (!shouldHide(container) && container.width + 1 < container.original.width) {
+                  container.width += 1;
+                  done = false;
+                } else if (!shouldHide(container) && container.height + 1 < container.original.width) {
+                  container.height += 1;
+                  done = false;
                 }
 
-                if (shouldHide(container)) {
-                    container.width = container.height = MIN_SIDE;
-                    container.left = container.top = -MIN_SIDE * .5;
-                }
             }
         }
     }
