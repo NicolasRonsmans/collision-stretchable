@@ -127,56 +127,29 @@ export default class Area extends Component {
                 const c = containers[j];
 
                 let collisions = this.detectCollisions(container, c);
-                let alt = false;
 
-                if (shouldHide(container) && shouldHide(c)) {
-                    continue;
-                }
-
-                while (isColliding(collisions) && (!shouldHide(container) || !shouldHide(c))) {
-                    if (alt) {
-                        if (orientation === 'left' && collisions.right) {
-                            container.width -= 1;
-                        }
-                        if (orientation === 'right' && collisions.left) {
-                            container.width -= 1;
-                            container.left += 1;
-                        }
-                        if (orientation === 'top' && collisions.bottom) {
-                            container.height -= 1;
-                        }
-                        if (orientation === 'bottom' && collisions.top) {
-                            container.height -= 1;
-                            container.top += 1;
-                        }
-                        if (shouldHide(container)) {
-                            container.width = container.height = MIN_SIDE;
-                            container.left = container.top = -MIN_SIDE * .5;
-                        }
-                    } else {
-                        if (c.orientation === 'right' && collisions.right) {
-                            c.width -= 1;
-                            c.left += 1;
-                        }
-                        if (c.orientation === 'left' && collisions.left) {
-                            c.width -= 1;
-                        }
-                        if (c.orientation === 'bottom' && collisions.bottom) {
-                            c.height -= 1;
-                            c.top += 1;
-                        }
-                        if (c.orientation === 'top' && collisions.top) {
-                            c.height -= 1;
-                        }
-                        if (shouldHide(c)) {
-                            c.width = c.height = MIN_SIDE;
-                            c.left = c.top = -MIN_SIDE * .5;
-                        }
+                if (isColliding(collisions) && !shouldHide(container)) {
+                    if (orientation === 'left' && collisions.right) {
+                        container.width -= 1;
+                    }
+                    if (orientation === 'right' && collisions.left) {
+                        container.width -= 1;
+                        container.left += 1;
+                    }
+                    if (orientation === 'top' && collisions.bottom) {
+                        container.height -= 1;
+                    }
+                    if (orientation === 'bottom' && collisions.top) {
+                        container.height -= 1;
+                        container.top += 1;
                     }
 
                     done = false;
-                    alt = !alt;
-                    collisions = this.detectCollisions(container, c);
+                }
+
+                if (shouldHide(container)) {
+                    container.width = container.height = MIN_SIDE;
+                    container.left = container.top = -MIN_SIDE * .5;
                 }
             }
         }
