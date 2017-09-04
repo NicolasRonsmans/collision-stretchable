@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import _ from 'underscore';
 
 const MAX_WIDTH = 1200;
 const MAX_HEIGHT = 800;
@@ -9,7 +10,7 @@ export default class Fluid extends Component {
 
     this.state = { width: null, height: null };
 
-    window.addEventListener('resize', this.setSize.bind(this));
+    window.addEventListener('resize', _.debounce(this.setSize.bind(this), 50));
   }
 
   componentWillMount() {

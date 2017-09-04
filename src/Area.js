@@ -4,13 +4,15 @@ import Dropzone from './Dropzone';
 const MIN_SIDE = 30;
 
 export default class Area extends Component {
-  state = {
-    dropzones: [
-      { x: 20, y: 25, width: 100, height: 30, orientation: 'left' },
-      { x: 25, y: 5, width: 100, height: 50, orientation: 'top' },
-      { x: 32, y: 30, width: 100, height: 45, orientation: 'top' },
-      { x: 35, y: 52, width: 100, height: 40, orientation: 'bottom' },
-    ]
+    state = {
+        dropzones: [
+            { x: 20, y: 25, width: 100, height: 31, orientation: 'left' },
+            { x: 25, y: 10, width: 100, height: 50, orientation: 'bottom' },
+            { x: 32, y: 30, width: 100, height: 45, orientation: 'top' },
+            { x: 35, y: 52, width: 100, height: 40, orientation: 'bottom' },
+            { x: 35, y: 10, width: 100, height: 40, orientation: 'top' },
+            // { x: 35, y: 95, width: 100, height: 40, orientation: 'top' },
+        ]
   }
   render() {
     const dropzones = this.dropzones;
@@ -76,66 +78,145 @@ export default class Area extends Component {
 
   getContainers = ghosts => {
     const containers = JSON.parse(JSON.stringify(ghosts));
+    const shouldHide = container => container.width <= MIN_SIDE || container.height <= MIN_SIDE;
+    const isColliding = collisions => collisions.left || collisions.right || collisions.top || collisions.bottom;
+    let done = false;
 
-    for (let i = 0; i < containers.length; i++) {
-      const container = containers[i];
-      const otherContainers = containers.filter((c, index) => index !== i);
-      const { orientation } = container;
-      let shouldHide = () => container.width < MIN_SIDE || container.height < MIN_SIDE;
+    while (!done) {
+        done = true;
 
-      for (let j = 0; j < otherContainers.length;) {
-        const c = otherContainers[j];
-        let collisions = this.detectCollisions(container, c);
-        let isColliding = () => collisions.left || collisions.right || collisions.top || collisions.bottom;
+        for (let i = 0; i < containers.length; i++) {
+            const container = containers[i];
+            const { orientation } = container;
 
-        while (isColliding() && !shouldHide()) {
-          if (orientation === 'left' && collisions.right) {
-            container.width--;
-          } else if (orientation === 'right' && collisions.left) {
-            container.width--;
-            container.left++;
-          } else if (orientation === 'top' && collisions.bottom) {
-            container.height--;
-          } else if (orientation === 'bottom' && collisions.top) {
-            container.height--;
-            container.top++;
-          }
+            // let outOfBounds = this.detectOutOfBounds(container);
+            //
+            // while (isColliding(outOfBounds) && !shouldHide(container)) {
+            //     if (orientation === 'left' && outOfBounds.right) {
+            //         container.width--;
+            //     }
+            //     if (orientation === 'right' && outOfBounds.left) {
+            //         container.width--;
+            //         container.left++;
+            //     }
+            //     if (orientation === 'top' && outOfBounds.bottom) {
+            //         container.height--;
+            //     }
+            //     if (orientation === 'bottom' && outOfBounds.top) {
+            //         container.height--;
+            //         container.top++;
+            //     }
+            //
+            //     done = false;
+            //
+            //     outOfBounds = this.detectOutOfBounds(container);
+            // }
+            //
+            // if (shouldHide(container)) {
+            //     container.width = container.height = MIN_SIDE;
+            //     container.left = container.top = -MIN_SIDE * .5;
+            //
+            //     continue;
+            // }
 
-          if (shouldHide() && j > 0) {
-            // j--;
-          } else {
-            collisions = this.detectCollisions(container, c);
-            j++;
-          }
+            for (let j = 0; j < containers.length; j++) {
+                if (i === j) {
+                    continue;
+                }
+
+                const c = containers[j];
+
+                let collisions = this.detectCollisions(container, c);
+                let alt = false;
+
+                if (shouldHide(container) && shouldHide(c)) {
+                    continue;
+                }
+
+                while (isColliding(collisions) && (!shouldHide(container) || !shouldHide(c))) {
+                    if (alt) {
+                        if (orientation === 'left' && collisions.right) {
+                            container.width -= 1;
+                        }
+                        if (orientation === 'right' && collisions.left) {
+                            container.width -= 1;
+                            container.left += 1;
+                        }
+                        if (orientation === 'top' && collisions.bottom) {
+                            container.height -= 1;
+                        }
+                        if (orientation === 'bottom' && collisions.top) {
+                            container.height -= 1;
+                            container.top += 1;
+                        }
+                        if (shouldHide(container)) {
+                            container.width = container.height = MIN_SIDE;
+                            container.left = container.top = -MIN_SIDE * .5;
+                        }
+                    } else {
+                        if (c.orientation === 'right' && collisions.right) {
+                            c.width -= 1;
+                            c.left += 1;
+                        }
+                        if (c.orientation === 'left' && collisions.left) {
+                            c.width -= 1;
+                        }
+                        if (c.orientation === 'bottom' && collisions.bottom) {
+                            c.height -= 1;
+                            c.top += 1;
+                        }
+                        if (c.orientation === 'top' && collisions.top) {
+                            c.height -= 1;
+                        }
+                        if (shouldHide(c)) {
+                            c.width = c.height = MIN_SIDE;
+                            c.left = c.top = -MIN_SIDE * .5;
+                        }
+                    }
+
+                    done = false;
+                    alt = !alt;
+                    collisions = this.detectCollisions(container, c);
+                }
+            }
         }
-      }
-
-      if (shouldHide()) {
-        container.width = container.height = 40;
-        container.left = container.top = -20;
-      }
     }
 
     return containers;
   }
 
-  detectCollisions = (d1, d2) => {
-    const d1Left = d1.refLeft + d1.left;
-    const d1Top = d1.refTop + d1.top;
-    const d2Left = d2.refLeft + d2.left;
-    const d2Top = d2.refTop + d2.top;
+  detectOutOfBounds = c1 => {
+    const props = this.props;
+    const areaWidth = props.width;
+    const areaHeight = props.height;
+    const c1Left = c1.refLeft + c1.left;
+    const c1Top = c1.refTop + c1.top;
+
+    return {
+        left: c1Left < 0,
+        top: c1Top < 0,
+        right: c1Left + c1.width > areaWidth,
+        bottom: c1Top + c1.height > areaHeight
+    };
+  }
+
+  detectCollisions = (c1, c2) => {
+    const c1Left = c1.refLeft + c1.left;
+    const c1Top = c1.refTop + c1.top;
+    const c2Left = c2.refLeft + c2.left;
+    const c2Top = c2.refTop + c2.top;
     const isColliding = (
-      d1Left < d2Left + d2.width &&
-      d1Left + d1.width > d2Left &&
-      d1Top < d2Top + d2.height &&
-      d1.height + d1Top > d2Top
+      c1Left < c2Left + c2.width &&
+      c1Left + c1.width > c2Left &&
+      c1Top < c2Top + c2.height &&
+      c1.height + c1Top > c2Top
     );
 
     return {
-      left: isColliding && d1Left > d2Left,
-      top: isColliding && d1Top > d2Top,
-      right: isColliding && d1Left + d1.width > d2Left,
-      bottom: isColliding && d1Top + d1.height > d2Top
+      left: isColliding && c1Left > c2Left,
+      top: isColliding && c1Top > c2Top,
+      right: isColliding && c1Left + c1.width > c2Left,
+      bottom: isColliding && c1Top + c1.height > c2Top
     };
   }
 }
