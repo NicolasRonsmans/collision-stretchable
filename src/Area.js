@@ -6,12 +6,13 @@ const MIN_SIDE = 30;
 export default class Area extends Component {
     state = {
         dropzones: [
-            { x: 20, y: 25, width: 100, height: 31, orientation: 'left' },
             { x: 25, y: 10, width: 100, height: 50, orientation: 'bottom' },
+            { x: 35, y: 10, width: 100, height: 40, orientation: 'top' },
+            { x: 50, y: 10, width: 100, height: 40, orientation: 'top' },
+            { x: 20, y: 25, width: 100, height: 35, orientation: 'left' },
             { x: 32, y: 30, width: 100, height: 45, orientation: 'top' },
             { x: 35, y: 52, width: 100, height: 40, orientation: 'bottom' },
-            { x: 35, y: 10, width: 100, height: 40, orientation: 'top' },
-            // { x: 35, y: 95, width: 100, height: 40, orientation: 'top' },
+            { x: 35, y: 95, width: 100, height: 40, orientation: 'top' },
         ]
   }
   render() {
@@ -81,7 +82,8 @@ export default class Area extends Component {
       orientation,
       refLeft: x * areaWidth / 100,
       refTop: y * areaHeight / 100,
-      original: { width, height, left, top }
+      original: { width, height, left, top },
+      max: { width, height, left, top }
     };
   }
 
@@ -96,37 +98,53 @@ export default class Area extends Component {
 
         for (let i = 0; i < containers.length; i++) {
             const container = containers[i];
-            const { orientation } = container;
 
-            // let outOfBounds = this.detectOutOfBounds(container);
-            //
-            // while (isColliding(outOfBounds) && !shouldHide(container)) {
-            //     if (orientation === 'left' && outOfBounds.right) {
-            //         container.width--;
-            //     }
-            //     if (orientation === 'right' && outOfBounds.left) {
-            //         container.width--;
-            //         container.left++;
-            //     }
-            //     if (orientation === 'top' && outOfBounds.bottom) {
-            //         container.height--;
-            //     }
-            //     if (orientation === 'bottom' && outOfBounds.top) {
-            //         container.height--;
-            //         container.top++;
-            //     }
-            //
-            //     done = false;
-            //
-            //     outOfBounds = this.detectOutOfBounds(container);
-            // }
-            //
-            // if (shouldHide(container)) {
-            //     container.width = container.height = MIN_SIDE;
-            //     container.left = container.top = -MIN_SIDE * .5;
-            //
-            //     continue;
-            // }
+            if (shouldHide(container)) {
+                continue;
+            }
+
+            const expanded = {
+                left: Object.assign({}, container, { width: container.width + 1, left: container.left - 1 }),
+                right: Object.assign({}, container, { width: container.width + 1 }),
+                top: Object.assign({}, container, { height: container.height + 1, top: container.top - 1 }),
+                bottom: Object.assign({}, container, { height: container.height + 1 }),
+            };
+            const { orientation } = container;
+            const overallCollisions = { left: false, right: false, top: false, bottom: false };
+            const expandedCollisions = { left: false, right: false, top: false, bottom: false };
+            const outOfBounds = this.detectOutOfBounds(container);
+            const outOfBoundsExpandedLeft = this.detectOutOfBounds(expanded.left);
+            const outOfBoundsExpandedRight = this.detectOutOfBounds(expanded.right);
+            const outOfBoundsExpandedTop = this.detectOutOfBounds(expanded.top);
+            const outOfBoundsExpandedBottom = this.detectOutOfBounds(expanded.bottom);
+
+            if (isColliding(outOfBounds)) {
+                if (outOfBounds.right && !overallCollisions.right) {
+                    overallCollisions.right = true;
+                }
+                if (outOfBounds.left && !overallCollisions.left) {
+                    overallCollisions.left = true;
+                }
+                if (outOfBounds.bottom && !overallCollisions.bottom) {
+                    overallCollisions.bottom = true;
+                }
+                if (outOfBounds.top && !overallCollisions.top) {
+                    overallCollisions.top = true;
+                }
+            }
+
+            if (outOfBoundsExpandedLeft.left && !expandedCollisions.left) {
+                expandedCollisions.left = true;
+            }
+            if (outOfBoundsExpandedRight.right && !expandedCollisions.right) {
+                expandedCollisions.right = true;
+            }
+            if (outOfBoundsExpandedTop.top && !expandedCollisions.top) {
+                expandedCollisions.top = true;
+            }
+            if (outOfBoundsExpandedBottom.bottom && !expandedCollisions.bottom) {
+                expandedCollisions.bottom = true;
+            }
 
             for (let j = 0; j < containers.length; j++) {
                 if (i === j) {
@@ -134,43 +152,98 @@ export default class Area extends Component {
                 }
 
                 const c = containers[j];
+                const collisions = this.detectCollisions(container, c);
+                const collisionsExpandedLeft = this.detectCollisions(expanded.left, c);
+                const collisionsExpandedRight = this.detectCollisions(expanded.right, c);
+                const collisionsExpandedTop = this.detectCollisions(expanded.top, c);
+                const collisionsExpandedBottom = this.detectCollisions(expanded.bottom, c);
 
-                let collisions = this.detectCollisions(container, c);
-
-                if (isColliding(collisions) && !shouldHide(container)) {
-                    if (orientation === 'left' && collisions.right) {
-                        container.width -= 1;
+                if (isColliding(collisions)) {
+                    if (collisions.left && !overallCollisions.left) {
+                        overallCollisions.left = true;
                     }
-                    if (orientation === 'right' && collisions.left) {
-                        container.width -= 1;
-                        container.left += 1;
+                    if (collisions.right && !overallCollisions.right) {
+                        overallCollisions.right = true;
                     }
-                    if (orientation === 'top' && collisions.bottom) {
-                        container.height -= 1;
+                    if (collisions.top && !overallCollisions.top) {
+                        overallCollisions.top = true;
                     }
-                    if (orientation === 'bottom' && collisions.top) {
-                        container.height -= 1;
-                        container.top += 1;
+                    if (collisions.bottom && !overallCollisions.bottom) {
+                        overallCollisions.bottom = true;
                     }
-
-                    if (shouldHide(container)) {
-                        container.width = container.height = MIN_SIDE;
-                        container.left = container.top = -MIN_SIDE * .5;
-                        // c.width = c.original.width;
-                        // c.height = c.original.height;
-                        // c.left = c.original.left;
-                        // c.top = c.original.top;
-                    }
-
-                    done = false;
-                } else if (!shouldHide(container) && container.width + 1 < container.original.width) {
-                  container.width += 1;
-                  done = false;
-                } else if (!shouldHide(container) && container.height + 1 < container.original.width) {
-                  container.height += 1;
-                  done = false;
                 }
 
+                if (collisionsExpandedLeft.left && !expandedCollisions.left) {
+                    expandedCollisions.left = true;
+                }
+                if (collisionsExpandedRight.right && !expandedCollisions.right) {
+                    expandedCollisions.right = true;
+                }
+                if (collisionsExpandedTop.top && !expandedCollisions.top) {
+                    expandedCollisions.top = true;
+                }
+                if (collisionsExpandedBottom.bottom && !expandedCollisions.bottom) {
+                    expandedCollisions.bottom = true;
+                }
+            }
+
+            if (isColliding(overallCollisions)) {
+                if (orientation !== 'right' && overallCollisions.right) {
+                    container.width -= 1;
+                }
+                if (orientation !== 'left' && overallCollisions.left) {
+                    container.width -= 1;
+                    container.left += 1;
+                }
+                if (orientation !== 'bottom' && overallCollisions.bottom) {
+                    container.height -= 1;
+                }
+                if (orientation !== 'top' && overallCollisions.top) {
+                    container.height -= 1;
+                    container.top += 1;
+                }
+
+                if (shouldHide(container)) {
+                    container.width = container.height = MIN_SIDE;
+                    container.left = container.top = -MIN_SIDE * .5;
+                }
+
+                done = false;
+            } else {
+                if (
+                    orientation !== 'right' && !expandedCollisions.right &&
+                    container.width < container.original.width
+                ) {
+                    container.width += 1;
+
+                    done = false;
+                }
+                if (
+                    orientation !== 'left' && !expandedCollisions.left &&
+                    container.width < container.original.width && container.left !== container.original.left
+                ) {
+                    container.width += 1;
+                    container.left -= 1;
+
+                    done = false;
+                }
+                if (
+                    orientation !== 'bottom' && !expandedCollisions.bottom &&
+                    container.height < container.original.height
+                ) {
+                    container.height += 1;
+
+                    done = false;
+                }
+                if (
+                    orientation !== 'top' && !expandedCollisions.top &&
+                    container.height < container.original.height && container.top !== container.original.top
+                ) {
+                    container.height += 1;
+                    container.top -= 1;
+
+                    done = false;
+                }
             }
         }
     }
