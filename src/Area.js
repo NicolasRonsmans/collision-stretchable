@@ -2,6 +2,8 @@ import React, { Component } from 'react';
 import Dropzone from './Dropzone';
 
 const MIN_SIDE = 30;
+const CONTAINER_GAP = 30;
+const DROPZONE_MIN_GAP = 4;
 
 export default class Area extends Component {
     state = {
@@ -65,13 +67,13 @@ export default class Area extends Component {
     }
 
     if (orientation === 'left') {
-      left = 20;
+      left = CONTAINER_GAP;
     } else if (orientation === 'right') {
-      left = -20 - width;
+      left = -CONTAINER_GAP - width;
     } else if (orientation === 'top') {
-      top = 20;
+      top = CONTAINER_GAP;
     } else if (orientation === 'bottom') {
-      top = -20 - height;
+      top = -CONTAINER_GAP - height;
     }
 
     return {
@@ -212,7 +214,7 @@ export default class Area extends Component {
             } else {
                 if (
                     orientation !== 'right' && !expandedCollisions.right &&
-                    container.width < container.original.width
+                    container.left + container.width < container.original.left + container.original.width
                 ) {
                     container.width += 1;
 
@@ -229,7 +231,7 @@ export default class Area extends Component {
                 }
                 if (
                     orientation !== 'bottom' && !expandedCollisions.bottom &&
-                    container.height < container.original.height
+                    container.top + container.height < container.original.top + container.original.height
                 ) {
                     container.height += 1;
 
